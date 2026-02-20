@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>麻雀 期待値比較ツール</title>
+<style>
+body{
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  margin:0;
+  padding:20px;
+  background:#f5f5f5;
+}
+
+.container{
+  max-width:500px;
+  margin:auto;
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+h1{
+  text-align:center;
+  font-size:20px;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-bottom:20px;
+  padding:10px;
+  border-radius:8px;
+  background:#fafafa;
+}
+
+label{
+  font-size:14px;
+}
+
+input[type="range"]{
+  width:100%;
+}
+
+.value{
+  font-weight:bold;
+  font-size:16px;
+}
+
+.result{
+  margin-top:20px;
+  padding:15px;
+  border-radius:8px;
+  background:#e8f5e9;
+  text-align:center;
+  font-size:16px;
+}
+
+.big{
+  font-size:18px;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>麻雀 期待値比較ツール</h1>
+
+<div class="section">
+<h3>パターンA</h3>
+<label>打点: <span id="pointAVal" class="value"></span></label>
+<input type="range" id="pointA" min="1000" max="24000" step="1000" value="8000">
+
+<label>和了率: <span id="rateAVal" class="value"></span></label>
+<input type="range" id="rateA" min="0" max="100" step="1" value="70">
+</div>
+
+<div class="section">
+<h3>パターンB</h3>
+<label>打点: <span id="pointBVal" class="value"></span></label>
+<input type="range" id="pointB" min="1000" max="24000" step="1000" value="12000">
+
+<label>和了率: <span id="rateBVal" class="value"></span></label>
+<input type="range" id="rateB" min="0" max="100" step="1" value="50">
+</div>
+
+<div class="result">
+<div>期待値A: <span id="evA" class="big"></span></div>
+<div>期待値B: <span id="evB" class="big"></span></div>
+<hr>
+<div id="compare"></div>
+<hr>
+<div id="breakeven"></div>
+</div>
+
+</div>
+
+<script>
+function update(){
+
+  const pointA = parseInt(document.getElementById("pointA").value);
+  const rateA = parseInt(document.getElementById("rateA").value)/100;
+
+  const pointB = parseInt(document.getElementById("pointB").value);
+  const rateB = parseInt(document.getElementById("rateB").value)/100;
+
+  const evA = Math.round(pointA * rateA);
+  const evB = Math.round(pointB * rateB);
+
+  document.getElementById("pointAVal").innerText = pointA;
+  document.getElementById("rateAVal").innerText = (rateA*100)+"%";
+  document.getElementById("pointBVal").innerText = pointB;
+  document.getElementById("rateBVal").innerText = (rateB*100)+"%";
+
+  document.getElementById("evA").innerText = evA;
+  document.getElementById("evB").innerText = evB;
+
+  if(evA > evB){
+    document.getElementById("compare").innerText = "👉 パターンAが有利";
+  }else if(evB > evA){
+    document.getElementById("compare").innerText = "👉 パターンBが有利";
+  }else{
+    document.getElementById("compare").innerText = "👉 同期待値";
+  }
+
+  // ブレークイーブン和了率（BがAと同期待値になる率）
+  const breakevenRateB = evA / pointB;
+  if(pointB > 0){
+    document.getElementById("breakeven").innerText =
+      "Bが同期待値になる和了率: " + (breakevenRateB*100).toFixed(1) + "%";
+  }
+}
+
+document.querySelectorAll("input").forEach(el=>{
+  el.addEventListener("input",update);
+});
+
+update();
+</script>
+
+</body>
+</html>
