@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>麻雀 期待値＋打点和了率グラフ</title>
+<title>麻雀EVグラフ</title>
 <style>
 body{
   font-family:-apple-system,BlinkMacSystemFont,sans-serif;
@@ -51,7 +51,7 @@ input[type="range"]{
 
 <div class="container">
 
-<h1>打点 × 和了率 可視化ツール</h1>
+<h1>期待値 = 打点 × 和了率</h1>
 
 <canvas id="chart"></canvas>
 
@@ -95,8 +95,8 @@ function draw(pointA, rateA, pointB, rateB){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   const padding = 40;
-  const maxX = 100; // 和了率
-  const maxY = 24000; // 打点
+  const maxX = 100;
+  const maxEV = 24000; // 最大期待値
 
   const w = canvas.width - padding*2;
   const h = canvas.height - padding*2;
@@ -108,16 +108,31 @@ function draw(pointA, rateA, pointB, rateB){
   ctx.lineTo(padding+w, padding+h);
   ctx.stroke();
 
+  function drawLine(point, color){
+    ctx.beginPath();
+    for(let r=0;r<=100;r++){
+      const ev = point * r / 100;
+      const x = padding + (r/maxX)*w;
+      const y = padding + h - (ev/maxEV)*h;
+      if(r===0) ctx.moveTo(x,y);
+      else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = color;
+    ctx.stroke();
+  }
+
+  drawLine(pointA, "blue");
+  drawLine(pointB, "red");
+
   function plot(point, rate, color){
+    const ev = point * rate / 100;
     const x = padding + (rate/maxX)*w;
-    const y = padding + h - (point/maxY)*h;
+    const y = padding + h - (ev/maxEV)*h;
 
     ctx.beginPath();
-    ctx.arc(x,y,8,0,Math.PI*2);
+    ctx.arc(x,y,7,0,Math.PI*2);
     ctx.fillStyle = color;
     ctx.fill();
-
-    return {x,y};
   }
 
   plot(pointA, rateA, "blue");
