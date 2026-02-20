@@ -3,135 +3,165 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>麻雀 期待値比較ツール</title>
+<title>麻雀 期待値＋打点和了率グラフ</title>
 <style>
 body{
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
   margin:0;
-  padding:20px;
+  padding:15px;
   background:#f5f5f5;
 }
-
 .container{
-  max-width:500px;
+  max-width:520px;
   margin:auto;
   background:white;
-  padding:20px;
+  padding:15px;
   border-radius:12px;
   box-shadow:0 4px 12px rgba(0,0,0,0.1);
 }
-
 h1{
   text-align:center;
-  font-size:20px;
-  margin-bottom:20px;
+  font-size:18px;
 }
-
+canvas{
+  width:100%;
+  height:300px;
+  border:1px solid #ddd;
+  border-radius:8px;
+  margin-bottom:15px;
+}
 .section{
-  margin-bottom:20px;
+  margin-bottom:15px;
+  background:#fafafa;
   padding:10px;
   border-radius:8px;
-  background:#fafafa;
 }
-
-label{
-  font-size:14px;
-}
-
 input[type="range"]{
   width:100%;
 }
-
-.value{
-  font-weight:bold;
-  font-size:16px;
-}
-
 .result{
-  margin-top:20px;
-  padding:15px;
-  border-radius:8px;
-  background:#e8f5e9;
   text-align:center;
-  font-size:16px;
-}
-
-.big{
-  font-size:18px;
-  font-weight:bold;
+  padding:10px;
+  background:#e8f5e9;
+  border-radius:8px;
 }
 </style>
 </head>
-
 <body>
+
 <div class="container">
 
-<h1>麻雀 期待値比較ツール</h1>
+<h1>打点 × 和了率 可視化ツール</h1>
+
+<canvas id="chart"></canvas>
 
 <div class="section">
 <h3>パターンA</h3>
-<label>打点: <span id="pointAVal" class="value"></span></label>
+打点: <span id="pointAVal"></span>
 <input type="range" id="pointA" min="1000" max="24000" step="1000" value="8000">
-
-<label>和了率: <span id="rateAVal" class="value"></span></label>
+和了率: <span id="rateAVal"></span>
 <input type="range" id="rateA" min="0" max="100" step="1" value="70">
 </div>
 
 <div class="section">
 <h3>パターンB</h3>
-<label>打点: <span id="pointBVal" class="value"></span></label>
+打点: <span id="pointBVal"></span>
 <input type="range" id="pointB" min="1000" max="24000" step="1000" value="12000">
-
-<label>和了率: <span id="rateBVal" class="value"></span></label>
+和了率: <span id="rateBVal"></span>
 <input type="range" id="rateB" min="0" max="100" step="1" value="50">
 </div>
 
 <div class="result">
-<div>期待値A: <span id="evA" class="big"></span></div>
-<div>期待値B: <span id="evB" class="big"></span></div>
-<hr>
+期待値A: <span id="evA"></span><br>
+期待値B: <span id="evB"></span><br>
 <div id="compare"></div>
-<hr>
-<div id="breakeven"></div>
 </div>
 
 </div>
 
 <script>
-function update(){
+const canvas = document.getElementById("chart");
+const ctx = canvas.getContext("2d");
 
-  const pointA = parseInt(document.getElementById("pointA").value);
-  const rateA = parseInt(document.getElementById("rateA").value)/100;
-
-  const pointB = parseInt(document.getElementById("pointB").value);
-  const rateB = parseInt(document.getElementById("rateB").value)/100;
-
-  const evA = Math.round(pointA * rateA);
-  const evB = Math.round(pointB * rateB);
-
-  document.getElementById("pointAVal").innerText = pointA;
-  document.getElementById("rateAVal").innerText = (rateA*100)+"%";
-  document.getElementById("pointBVal").innerText = pointB;
-  document.getElementById("rateBVal").innerText = (rateB*100)+"%";
-
-  document.getElementById("evA").innerText = evA;
-  document.getElementById("evB").innerText = evB;
-
-  if(evA > evB){
-    document.getElementById("compare").innerText = "👉 パターンAが有利";
-  }else if(evB > evA){
-    document.getElementById("compare").innerText = "👉 パターンBが有利";
-  }else{
-    document.getElementById("compare").innerText = "👉 同期待値";
-  }
-
-  // ブレークイーブン和了率（BがAと同期待値になる率）
-  const breakevenRateB = evA / pointB;
-  if(pointB > 0){
-    document.getElementById("breakeven").innerText =
-      "Bが同期待値になる和了率: " + (breakevenRateB*100).toFixed(1) + "%";
-  }
+function resizeCanvas(){
+  canvas.width = canvas.clientWidth;
+  canvas.height = canvas.clientHeight;
 }
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+function draw(pointA, rateA, pointB, rateB){
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const padding = 40;
+  const maxX = 100; // 和了率
+  const maxY = 24000; // 打点
+
+  const w = canvas.width - padding*2;
+  const h = canvas.height - padding*2;
+
+  // 軸
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, padding+h);
+  ctx.lineTo(padding+w, padding+h);
+  ctx.stroke();
+
+  function plot(point, rate, color){
+    const x = padding + (rate/maxX)*w;
+    const y = padding + h - (point/maxY)*h;
+
+    ctx.beginPath();
+    ctx.arc(x,y,8,0,Math.PI*2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    return {x,y};
+  }
+
+  plot(pointA, rateA, "blue");
+  plot(pointB, rateB, "red");
+}
+
+function update(){
+  const pointA = parseInt(pointAEl.value);
+  const rateA = parseInt(rateAEl.value);
+  const pointB = parseInt(pointBEl.value);
+  const rateB = parseInt(rateBEl.value);
+
+  pointAVal.textContent = pointA;
+  rateAVal.textContent = rateA+"%";
+  pointBVal.textContent = pointB;
+  rateBVal.textContent = rateB+"%";
+
+  const evA = Math.round(pointA * rateA / 100);
+  const evB = Math.round(pointB * rateB / 100);
+
+  evAEl.textContent = evA;
+  evBEl.textContent = evB;
+
+  compare.textContent =
+    evA > evB ? "👉 Aが有利"
+    : evB > evA ? "👉 Bが有利"
+    : "👉 同期待値";
+
+  draw(pointA, rateA, pointB, rateB);
+}
+
+const pointAEl = document.getElementById("pointA");
+const rateAEl = document.getElementById("rateA");
+const pointBEl = document.getElementById("pointB");
+const rateBEl = document.getElementById("rateB");
+
+const pointAVal = document.getElementById("pointAVal");
+const rateAVal = document.getElementById("rateAVal");
+const pointBVal = document.getElementById("pointBVal");
+const rateBVal = document.getElementById("rateBVal");
+
+const evAEl = document.getElementById("evA");
+const evBEl = document.getElementById("evB");
+const compare = document.getElementById("compare");
 
 document.querySelectorAll("input").forEach(el=>{
   el.addEventListener("input",update);
